@@ -1,5 +1,6 @@
 create database if not exists `open-devops`;
 
+drop table if exists  `stree_path`;
 CREATE TABLE if not exists `stree_path` (
                               `id` int(11) NOT NULL AUTO_INCREMENT,
                               `level` tinyint(4) NOT NULL,
