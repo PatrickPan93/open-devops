@@ -6,7 +6,7 @@ GOGET=${GOCMD} get
 DATE= `date +%FT%T%z`
 
 
-BINARY_NAME="`pwd |awk -F '/' '{print $NF}'`"
+BINARY_NAME="open-devops"
 BINARY_LINUX=${BINARY_NAME}_linux
 BUILDUSER=`whoami`@`hostname`
 BUILDDATE=`date  +'%Y-%m-%d %H:%M:%S'`
@@ -16,11 +16,11 @@ GITBRANCH=`git symbolic-ref --short -q HEAD`
 LDFLAGES=" -X 'github.com/prometheus/common/version.BuildUser=${BUILDUSER}' -X 'github.com/prometheus/common/version.BuildDate=${BUILDDATE}' -X 'github.com/prometheus/common/version.Revision=${GITREVISION}' -X 'github.com/prometheus/common/version.Version=${GITVERSION}' -X 'github.com/prometheus/common/version.Branch=${GITBRANCH}' "
 
 all:  build
+
 build:
 		${GOBUILD} -v  -ldflags ${LDFLAGES} -o ${BINARY_NAME}
-
-build server:
-		${GOBUILD} -v src/modules/server/server.go -ldflags ${LDFLAGES} -o ${BINARY_NAME}
+build-server:
+		${GOBUILD} -v  -ldflags ${LDFLAGES} -o ${BINARY_NAME}-server src/modules/server/server.go
 test:
 		${GOTEST} -v ./...
 clean:
@@ -30,7 +30,5 @@ clean:
 run:
 		${GOBUILD} -o ${BINARY_NAME} -v ./...
 		./${BINARY_NAME}
-
-
 build-linux:
 		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 ${GOBUILD} -o ${BINARY_LINUX} -v
