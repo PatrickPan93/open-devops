@@ -81,12 +81,12 @@ func StreePathGetMany(where string, args ...interface{}) ([]StreePath, error) {
 func StreePathQuery(req *common.NodeCommonReq) {
 	// whatever you want to query. we must make sure that g exists.
 	var dbg *StreePath
-	// split by . , get g name from index 0
-	g := strings.Split(req.Node, ".")[0]
+	// split by .  get g name from index 0
+	gName := strings.Split(req.Node, ".")[0]
 	nodeG := StreePath{
 		Level:    group,
 		Path:     originPath,
-		NodeName: g,
+		NodeName: gName,
 	}
 	dbg, err := nodeG.getOne()
 	if err != nil {
@@ -189,14 +189,19 @@ func StreePathQuery(req *common.NodeCommonReq) {
 			pathA := fmt.Sprintf("%s/%d", dbp.Path, dbp.Id)
 			whereStr = "level = ? and path = ?"
 			as, err := StreePathGetMany(whereStr, application, pathA)
-			fmt.Println(as)
+			var res []string
+			for _, a := range as {
+				fullPath := fmt.Sprintf("%s.%s.%s", dbg.NodeName, dbp.NodeName, a.NodeName)
+				res = append(res, fullPath)
+			}
+			sort.Strings(res)
+			fmt.Println(res)
 			return
 		}
 		log.Printf("%+v", errors.New(
 			fmt.Sprintf(
 				"StreePathQuery: Invalid group.department name '%s'", req.Node)))
 		return
-
 	default:
 		log.Printf(
 			"%+v", errors.New(
@@ -352,7 +357,7 @@ func StreePathQueryTest() {
 	ns := []string{
 		"waimai.monitor",
 		"waimai.ditu",
-	}
+		"inf.cicd"}
 	for _, n := range ns {
 		req := &common.NodeCommonReq{
 			Node:      n,
@@ -361,3 +366,5 @@ func StreePathQueryTest() {
 		StreePathQuery(req)
 	}
 }
+
+// TODO: Deleting Node OP
