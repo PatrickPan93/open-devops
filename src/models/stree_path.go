@@ -521,4 +521,5 @@ func StreePathDeleteTest() {
 
 }
 
-// TODO: Deleting Node OP
+// TODO: Force deleting all data with g param. could use where path like 'g.id%%' to delete target data
+// TODO: A function to support RAW sql execution.
