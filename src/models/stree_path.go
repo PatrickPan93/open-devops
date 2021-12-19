@@ -16,6 +16,10 @@ const (
 	queryALlPAByG = 2
 	queryAllAByPG = 3
 
+	deleteGIfNoPUnderG = 1
+	deletePIfNoAUnderP = 2
+	deleteAifGPAExist  = 3
+
 	group       = 1
 	department  = 2
 	application = 3
@@ -31,12 +35,12 @@ type StreePath struct {
 	NodeName string `json:"node_name"`
 }
 
-func (sp *StreePath) addOne() (int64, error) {
+func (sp *StreePath) AddOne() (int64, error) {
 	return DB[streeDB].InsertOne(sp)
 }
 
 // GetOne query one record base on query param
-func (sp *StreePath) getOne() (*StreePath, error) {
+func (sp *StreePath) GetOne() (*StreePath, error) {
 	has, err := DB[streeDB].Get(sp)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetOne: failed to get one streePath record")
@@ -47,12 +51,17 @@ func (sp *StreePath) getOne() (*StreePath, error) {
 	return sp, nil
 }
 
+// DelOne  delete one record by obj
+func (sp *StreePath) DelOne() (int64, error) {
+	return DB["stree"].Delete(sp)
+}
+
 // CheckExist Check streePath if it's exists
 func (sp *StreePath) CheckExist() (bool, error) {
 	return DB[streeDB].Exist(sp)
 }
 
-// StreePathGet 函数的get
+// StreePathGetOne  函数的get
 func StreePathGetOne(where string, args ...interface{}) (*StreePath, error) {
 	var obj StreePath
 	has, err := DB[streeDB].Where(where, args...).Get(&obj)
@@ -88,7 +97,7 @@ func StreePathQuery(req *common.NodeCommonReq) {
 		Path:     originPath,
 		NodeName: gName,
 	}
-	dbg, err := nodeG.getOne()
+	dbg, err := nodeG.GetOne()
 	if err != nil {
 		log.Printf("%+v\n", err)
 		return
@@ -226,7 +235,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 		Path:     "0",
 		NodeName: g,
 	}
-	dbG, err := nodeG.getOne()
+	dbG, err := nodeG.GetOne()
 	if err != nil {
 		log.Printf("StreePathAddOne: Failed to get node g '%+v'", err)
 		return
@@ -236,7 +245,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 	case nil:
 		log.Println("StreePathAddOne: g is not exists, creating..")
 		// 说明g不存在,依次插入g.p.a
-		_, err := nodeG.addOne()
+		_, err := nodeG.AddOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: Adding g failed: '%+v'", err)
 			return
@@ -250,7 +259,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 			Path:     pathP,
 			NodeName: p,
 		}
-		_, err = nodeP.addOne()
+		_, err = nodeP.AddOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: Adding p failed: '%+v'", err)
 			return
@@ -264,7 +273,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 			Path:     pathA,
 			NodeName: a,
 		}
-		_, err = nodeA.addOne()
+		_, err = nodeA.AddOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: Adding p failed: '%+v'", err)
 			return
@@ -280,7 +289,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 			Path:     pathP,
 			NodeName: p,
 		}
-		dbP, err := nodeP.getOne()
+		dbP, err := nodeP.GetOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: g exists but check p failed, path %s, err %+v", req.Node, err)
 			return
@@ -293,7 +302,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 				Path:     pathA,
 				NodeName: a,
 			}
-			dbA, err := nodeA.getOne()
+			dbA, err := nodeA.GetOne()
 			if err != nil {
 				log.Printf("StreePathAddOne: g.p exists but check a failed, path %s, err %+v", req.Node, err)
 				return
@@ -302,7 +311,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 				log.Printf("StreePathAddOne: g.p.a exists, dont need to write again")
 				return
 			}
-			_, err = nodeA.addOne()
+			_, err = nodeA.AddOne()
 			if err != nil {
 				log.Printf("StreePathAddOne: g.p exists, writing a faied: %+v", err)
 				return
@@ -311,7 +320,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 			return
 		}
 		// 说明g存在,但p不存在,那么需要创建p的同时也创建a
-		_, err = nodeP.addOne()
+		_, err = nodeP.AddOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: g exists, writing p faied: %+v", err)
 			return
@@ -323,13 +332,140 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 			Path:     pathA,
 			NodeName: a,
 		}
-		_, err = nodeA.addOne()
+		_, err = nodeA.AddOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: g.p exists, writing a faied: %+v", err)
 			return
 		}
 	}
 	log.Println("StreePathAddOne: Adding g.p.a successfully")
+}
+
+func StreePathDelete(req *common.NodeCommonReq) int64 {
+	// whatever we want to delete, we must make sure g existed.
+	var dbg *StreePath
+
+	// split by .  get g name from index 0
+	path := strings.Split(req.Node, ".")
+	pLevel := len(path)
+	nodeG := &StreePath{
+		Level:    group,
+		Path:     originPath,
+		NodeName: path[0], // means to get g_name
+	}
+	dbg, err := nodeG.GetOne()
+	if err != nil {
+		log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: Error while getting g %s", nodeG.NodeName)))
+		return 0
+	}
+	if dbg == nil {
+		log.Printf("%+v", errors.New(
+			fmt.Sprintf(
+				"StreePathQuery: g does not exist '%s'", req.Node)))
+		return 0
+	}
+	switch pLevel {
+	case deleteGIfNoPUnderG:
+		// g existed. trying to find p
+		pathP := fmt.Sprintf("/%d", dbg.Id)
+		whereStr := "level=? and path=?"
+		ps, err := StreePathGetMany(whereStr, department, pathP)
+		if err != nil {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: failed to get ps %s", pathP)))
+			return 0
+		}
+		if len(ps) > 0 {
+			log.Printf(
+				fmt.Sprintf(
+					"StreePathDelete: failed to delete g %s , there are p %v under g %s", dbg.NodeName, ps, dbg.NodeName))
+			return 0
+		}
+		delNum, err := dbg.DelOne()
+		if err != nil {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: Error while deleting g %s", dbg.NodeName)))
+			return 0
+		}
+		log.Println(fmt.Sprintf("StreePathDelete: Deleting g %s successfully.. %d g get deleted", dbg.NodeName, delNum))
+		return delNum
+	case deletePIfNoAUnderP:
+		// g existed. trying to find p
+		pathP := fmt.Sprintf("/%d", dbg.Id)
+		nodeP := &StreePath{
+			Level:    department,
+			Path:     pathP,
+			NodeName: path[1],
+		}
+		dbp, err := nodeP.GetOne()
+		if err != nil {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: Error while deleting p %s", nodeP.NodeName)))
+			return 0
+		}
+		if dbp == nil {
+			log.Printf("%+v", errors.New(
+				fmt.Sprintf(
+					"StreePathQuery: p does not exist '%s'", req.Node)))
+			return 0
+		}
+		pathA := fmt.Sprintf("%s/%d", dbp.Path, dbp.Id)
+		whereStr := "level=? and path=?"
+		as, err := StreePathGetMany(whereStr, application, pathA)
+		if err != nil {
+			log.Printf("%+v\n", fmt.Sprintf("StreePathQuery: error while getting a %s", pathA))
+			return 0
+		}
+		if len(as) > 0 {
+			log.Printf(
+				fmt.Sprintf(
+					"StreePathDelete: failed to delete p %s.%s , there are a %v under p %s.%s",
+					dbg.NodeName, dbp.NodeName, as, dbg.NodeName, dbp.NodeName))
+			return 0
+		}
+		delNum, err := dbp.DelOne()
+		if err != nil {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: Error while deleting p %s", dbp.NodeName)))
+			return 0
+		}
+		log.Println(fmt.Sprintf("StreePathDelete: Deleting p %s.%s successfully.. %s.%s p get deleted",
+			dbg.NodeName, dbp.NodeName, dbg.NodeName, dbp.NodeName))
+		return delNum
+	case deleteAifGPAExist:
+		pathP := fmt.Sprintf("/%d", dbg.Id)
+		nodeP := &StreePath{
+			Level:    department,
+			Path:     pathP,
+			NodeName: path[1],
+		}
+		dbp, err := nodeP.GetOne()
+		if err != nil {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: Error while getting p %s.%s.%s", dbg.NodeName, nodeP.NodeName, path[2])))
+			return 0
+		}
+		if dbp == nil {
+			log.Printf("%+v", errors.New(
+				fmt.Sprintf(
+					"StreePathQuery: p does not exist '%s'", req.Node)))
+			return 0
+		}
+		pathA := fmt.Sprintf("%s/%d", dbp.Path, dbp.Id)
+		whereStr := "level=? and path=? and node_name=?"
+		dba, err := StreePathGetOne(whereStr, application, pathA, path[2])
+		if err != nil {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: Error while getting a %s.%s.%s", dbg.NodeName, dbp.NodeName, path[2])))
+			return 0
+		}
+		delNum, err := dba.DelOne()
+		if err != nil {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: Error while deleting a %s.%s.%s", dbg.NodeName, dbp.NodeName, path[2])))
+			return 0
+		}
+		log.Println(fmt.Sprintf("StreePathDelete: Deleting p %s.%s.%s successfully.. %s.%s.%s p get deleted",
+			dbg.NodeName, dbp.NodeName, dba.NodeName, dbg.NodeName, dbp.NodeName, dba.NodeName))
+		return delNum
+
+	default:
+		log.Println("StreePathDelete: default logic")
+		return 0
+	}
 }
 
 // StreePathAddTest TESTING
@@ -343,6 +479,7 @@ func StreePathAddTest() {
 		"waimai.monitor.m3db",
 		"waimai.ditu.kafka",
 		"waimai.ditu.elasticsearch",
+		"inf.building",
 	}
 	for _, n := range ns {
 		req := &common.NodeCommonReq{
@@ -365,6 +502,23 @@ func StreePathQueryTest() {
 		}
 		StreePathQuery(req)
 	}
+}
+
+func StreePathDeleteTest() {
+	ns := []string{
+		"inf",
+		"waimai",
+		"ditu",
+		"inf.monitor",
+		"inf.monitor.kafka",
+		"inf.monitor.kafka.test",
+	}
+	for _, n := range ns {
+		req := &common.NodeCommonReq{Node: n}
+		res := StreePathDelete(req)
+		fmt.Println(res)
+	}
+
 }
 
 // TODO: Deleting Node OP

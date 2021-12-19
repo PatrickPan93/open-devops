@@ -45,4 +45,5 @@ func main() {
 
 	models.StreePathAddTest()
 	models.StreePathQueryTest()
+	models.StreePathDeleteTest()
 }
