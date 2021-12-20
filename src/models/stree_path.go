@@ -364,6 +364,37 @@ func StreePathDelete(req *common.NodeCommonReq) int64 {
 				"StreePathQuery: g does not exist '%s'", req.Node)))
 		return 0
 	}
+	if req.ForceDelete {
+		whereStr := "path like ? or path= ?"
+		sp, err := StreePathGetMany(whereStr, fmt.Sprintf(`/%d/%%%%`, dbg.Id), fmt.Sprintf("/%d", dbg.Id))
+		if err != nil {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: Error while getting all child nodes of g %s", dbg.NodeName)))
+			return 0
+		}
+		for _, v := range sp {
+			delNum, err := v.DelOne()
+			if err != nil {
+				log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: error while deleting data via force delete mode %v", v)))
+				return 0
+			}
+			if delNum < 1 {
+				log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: error while deleting data via force delete mode %v", v)))
+				return delNum
+			}
+			log.Println(fmt.Sprintf("StreePathDelete: deleting data via force mode successfully %v", v))
+		}
+		delNum, err := dbg.DelOne()
+		if err != nil {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: error while deleting data via force delete mode %v", dbg.NodeName)))
+			return 0
+		}
+		if delNum < 1 {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: error while deleting data via force delete mode %v", dbg.NodeName)))
+			return delNum
+		}
+		log.Printf(fmt.Sprintf("StreePathDelete: deleting g %s with force mode successfully", dbg.NodeName))
+		return delNum
+	}
 	switch pLevel {
 	case deleteGIfNoPUnderG:
 		// g existed. trying to find p
@@ -506,20 +537,14 @@ func StreePathQueryTest() {
 
 func StreePathDeleteTest() {
 	ns := []string{
-		"inf",
 		"waimai",
-		"ditu",
-		"inf.monitor",
-		"inf.monitor.kafka",
-		"inf.monitor.kafka.test",
 	}
 	for _, n := range ns {
-		req := &common.NodeCommonReq{Node: n}
+		req := &common.NodeCommonReq{Node: n, ForceDelete: true}
 		res := StreePathDelete(req)
 		fmt.Println(res)
 	}
 
 }
 
-// TODO: Force deleting all data with g param. could use where path like 'g.id%%' to delete target data
 // TODO: A function to support RAW sql execution.

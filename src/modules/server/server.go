@@ -44,6 +44,6 @@ func main() {
 	models.InitMySQL(serverConfig.MysqlS)
 
 	models.StreePathAddTest()
-	models.StreePathQueryTest()
+	//models.StreePathQueryTest()
 	models.StreePathDeleteTest()
 }
