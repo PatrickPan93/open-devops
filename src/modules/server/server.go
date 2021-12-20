@@ -94,7 +94,7 @@ func main() {
 			errChan := make(chan error, 1)
 			// 由于rpc server特殊性,无法传入ctx,所以需要用go routine去进行启动
 			go func() {
-				errChan <- rpc.Start(":18080")
+				errChan <- rpc.Start(serverConfig.RPCAddr)
 			}()
 
 			select {
@@ -103,6 +103,7 @@ func main() {
 				log.Printf("%+v", errors.Wrap(err, "rpc server running error"))
 				return err
 			// 如果ctx被显式cancel,退出当前go routine
+
 			case <-ctx.Done():
 				log.Println("rpc server receive quit signal.. would be stopped soon")
 				return nil

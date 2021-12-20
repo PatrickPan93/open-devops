@@ -8,16 +8,7 @@ import (
 )
 
 type Config struct {
-	MysqlS  []*MysqlConf `yaml:"mysql_s"`
-	RPCAddr string       `yaml:"rpc_addr"`
-}
-
-type MysqlConf struct {
-	Name    string `yaml:"name"`
-	Addr    string `yaml:"addr"`
-	MaxCon  int    `yaml:"max_con"`
-	MaxIdle int    `yaml:"max_idle"`
-	Debug   bool   `yaml:"debug"`
+	RPCServerAddr string `yaml:"rpc_server_addr"`
 }
 
 // Load 根据LoadFile读取配置文件后的字符串解析yaml为配置结构体

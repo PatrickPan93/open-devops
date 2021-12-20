@@ -5,3 +5,5 @@ mysql_s:
     max_con: 128
     max_idle: 16
     debug: false
+
+rpc_addr: 0.0.0.0:8081
