@@ -14,6 +14,9 @@ func configRoutes(r *gin.Engine) {
 			c.String(http.StatusOK, "pong")
 		})
 		api.GET("now-ts", GetNowTs)
+		api.POST("/node-path", NodePathAdd)
+		api.GET("/node-path", NodePathQuery)
+		api.DELETE("/node-path", NodePathDelete)
 	}
 }
 

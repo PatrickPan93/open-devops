@@ -87,7 +87,7 @@ func StreePathGetMany(where string, args ...interface{}) ([]StreePath, error) {
 
 }
 
-func StreePathQuery(req *common.NodeCommonReq) {
+func StreePathQuery(req *common.NodeCommonReq) []string {
 	// whatever you want to query. we must make sure that g exists.
 	var dbg *StreePath
 	// split by .  get g name from index 0
@@ -100,15 +100,15 @@ func StreePathQuery(req *common.NodeCommonReq) {
 	dbg, err := nodeG.GetOne()
 	if err != nil {
 		log.Printf("%+v\n", err)
-		return
+		return nil
 	}
 	if dbg == nil {
 		log.Printf("%+v", errors.New(
 			fmt.Sprintf(
 				"StreePathQuery: g does not exist '%s'", req.Node)))
-		return
+		return nil
 	}
-
+	var res []string
 	switch req.QueryType {
 	case queryAllPByG:
 		if req.IsExpectedLenFormat(1) {
@@ -117,25 +117,25 @@ func StreePathQuery(req *common.NodeCommonReq) {
 			sps, err := StreePathGetMany(whereStr, department, pathP)
 			if err != nil {
 				log.Printf("%+v\n", err)
-				return
+				return nil
 			}
 			if len(sps) == 0 {
 				log.Printf("%+v", errors.New(
 					fmt.Sprintf(
 						"StreePathQuery: no p under g '%s'", dbg.NodeName)))
-				return
+				return nil
 			}
-			var res []string
+
 			for _, i := range sps {
 				res = append(res, i.NodeName)
 			}
-			log.Println(res)
-			return
+			//log.Println(res)
+			return res
 		}
 		log.Printf("%+v", errors.New(
 			fmt.Sprintf(
 				"StreePathQuery: Invalid group name '%s'", req.Node)))
-		return
+		return nil
 	case queryALlPAByG:
 		if req.IsExpectedLenFormat(1) {
 			// 根据g查询所有的g.p.a
@@ -144,11 +144,11 @@ func StreePathQuery(req *common.NodeCommonReq) {
 			sps, err := StreePathGetMany(whereStr, department, pathP)
 			if err != nil {
 				log.Printf("%+v\n", err)
-				return
+				return nil
 			}
 			if len(sps) == 0 {
 				log.Println("StreePathQuery: no p under g")
-				return
+				return nil
 			}
 
 			// 根据p的结果拼接pathA,找出所有匹配的a
@@ -171,13 +171,13 @@ func StreePathQuery(req *common.NodeCommonReq) {
 				}
 			}
 			sort.Strings(res)
-			log.Println(res)
-			return
+			//log.Println(res)
+			return res
 		}
 		log.Printf("%+v", errors.New(
 			fmt.Sprintf(
 				"StreePathQuery: Invalid group name '%s'", req.Node)))
-		return
+		return nil
 	case queryAllAByPG:
 		// 由于switch前的逻辑,到这里可以确认g存在
 		if req.IsExpectedLenFormat(2) {
@@ -188,12 +188,13 @@ func StreePathQuery(req *common.NodeCommonReq) {
 			dbp, err := StreePathGetOne(whereStr, department, pathP, p)
 			if err != nil {
 				log.Printf("%+v\n", err)
+				return nil
 			}
 			if dbp == nil {
 				log.Printf("%+v", errors.New(
 					fmt.Sprintf(
 						"StreePathQuery: p does not exist '%s'", p)))
-				return
+				return nil
 			}
 			pathA := fmt.Sprintf("%s/%d", dbp.Path, dbp.Id)
 			whereStr = "level = ? and path = ?"
@@ -204,28 +205,29 @@ func StreePathQuery(req *common.NodeCommonReq) {
 				res = append(res, fullPath)
 			}
 			sort.Strings(res)
-			fmt.Println(res)
-			return
+			//fmt.Println(res)
+			return res
 		}
 		log.Printf("%+v", errors.New(
 			fmt.Sprintf(
 				"StreePathQuery: Invalid group.department name '%s'", req.Node)))
-		return
+		return nil
 	default:
 		log.Printf(
 			"%+v", errors.New(
 				fmt.Sprintf(
 					"StreePathQuery: target query type not supported '%d'", req.QueryType)))
 	}
+	return nil
 }
 
 // StreePathAddOne 新增Path
-func StreePathAddOne(req *common.NodeCommonReq) {
+func StreePathAddOne(req *common.NodeCommonReq) error {
 	// 要求新增对象必须是 g.p.a 三段式
 	res := strings.Split(req.Node, ".")
 	if len(res) != 3 {
 		log.Printf("StreePathAddOne: Invalid path format: %s", req.Node)
-		return
+		return errors.Errorf("StreePathAddOne: Invalid path format: %s", req.Node)
 	}
 	g, p, a := res[0], res[1], res[2]
 
@@ -238,7 +240,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 	dbG, err := nodeG.GetOne()
 	if err != nil {
 		log.Printf("StreePathAddOne: Failed to get node g '%+v'", err)
-		return
+		return errors.Wrap(err, "")
 	}
 	// 根据g查询结果再判断
 	switch dbG {
@@ -248,7 +250,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 		_, err := nodeG.AddOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: Adding g failed: '%+v'", err)
-			return
+			return errors.Wrap(err, "")
 		}
 		log.Println("StreePathAddOne: g is created...")
 		// 插入p并以g的id构造path
@@ -262,7 +264,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 		_, err = nodeP.AddOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: Adding p failed: '%+v'", err)
-			return
+			return errors.Wrap(err, "")
 		}
 		log.Println("StreePathAddOne: p is created...")
 		// 插入a并以p,g id构造path
@@ -276,7 +278,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 		_, err = nodeA.AddOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: Adding p failed: '%+v'", err)
-			return
+			return errors.Wrap(err, "")
 		}
 		log.Println("StreePathAddOne: a is created...")
 	default:
@@ -292,7 +294,7 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 		dbP, err := nodeP.GetOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: g exists but check p failed, path %s, err %+v", req.Node, err)
-			return
+			return errors.Wrap(err, "")
 		}
 		if dbP != nil {
 			log.Println("StreePathAddOne: g.p exists and going to find a")
@@ -305,25 +307,25 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 			dbA, err := nodeA.GetOne()
 			if err != nil {
 				log.Printf("StreePathAddOne: g.p exists but check a failed, path %s, err %+v", req.Node, err)
-				return
+				return errors.Wrap(err, "")
 			}
 			if dbA != nil {
 				log.Printf("StreePathAddOne: g.p.a exists, dont need to write again")
-				return
+				return errors.Wrap(err, "")
 			}
 			_, err = nodeA.AddOne()
 			if err != nil {
 				log.Printf("StreePathAddOne: g.p exists, writing a faied: %+v", err)
-				return
+				return errors.Wrap(err, "")
 			}
 			log.Println("StreePathAddOne: adding a successfully")
-			return
+			return errors.Wrap(err, "")
 		}
 		// 说明g存在,但p不存在,那么需要创建p的同时也创建a
 		_, err = nodeP.AddOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: g exists, writing p faied: %+v", err)
-			return
+			return errors.Wrap(err, "")
 		}
 		// 创建p成功,构造A并创建
 		pathA := fmt.Sprintf("%s/%d", nodeP.Path, nodeP.Id)
@@ -335,10 +337,11 @@ func StreePathAddOne(req *common.NodeCommonReq) {
 		_, err = nodeA.AddOne()
 		if err != nil {
 			log.Printf("StreePathAddOne: g.p exists, writing a faied: %+v", err)
-			return
+			return errors.Wrap(err, "")
 		}
 	}
 	log.Println("StreePathAddOne: Adding g.p.a successfully")
+	return nil
 }
 
 func StreePathDelete(req *common.NodeCommonReq) int64 {
@@ -482,6 +485,10 @@ func StreePathDelete(req *common.NodeCommonReq) int64 {
 		dba, err := StreePathGetOne(whereStr, application, pathA, path[2])
 		if err != nil {
 			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: Error while getting a %s.%s.%s", dbg.NodeName, dbp.NodeName, path[2])))
+			return 0
+		}
+		if dba == nil {
+			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete:  a does not exist %s.%s.%s", dbg.NodeName, dbp.NodeName, path[2])))
 			return 0
 		}
 		delNum, err := dba.DelOne()
