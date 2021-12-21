@@ -6,6 +6,7 @@ import (
 	"open-devops/src/models"
 	"open-devops/src/modules/server/config"
 	"open-devops/src/modules/server/rpc"
+	"open-devops/src/modules/server/web"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -106,6 +107,31 @@ func main() {
 
 			case <-ctx.Done():
 				log.Println("rpc server receive quit signal.. would be stopped soon")
+				return nil
+
+			}
+		},
+			func(err error) {
+				cancel()
+			})
+	}
+	{
+		// starting rpc server here
+		g.Add(func() error {
+			errChan := make(chan error, 1)
+			// 由于rpc server特殊性,无法传入ctx,所以需要用go routine去进行启动
+			go func() {
+				errChan <- web.StartGin(serverConfig.HTTPAddr)
+			}()
+
+			select {
+			// 如果rpc server阻塞解决并且抛出异常，则退出当前go routine并抛出错误
+			case err := <-errChan:
+				log.Printf("%+v", errors.Wrap(err, "web server running error"))
+				return err
+			// 如果ctx被显式cancel,退出当前go routine
+			case <-ctx.Done():
+				log.Println("web server receive quit signal.. would be stopped soon")
 				return nil
 
 			}

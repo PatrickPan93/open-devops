@@ -3,6 +3,7 @@ package rpc
 import (
 	"bufio"
 	"io"
+	"log"
 	"net"
 	"net/rpc"
 	"reflect"
@@ -27,12 +28,30 @@ func InitRpcCli(serverAddr string) *RpcCli {
 	}
 }
 
+func (r *RpcCli) isHealth() bool {
+	conn, err := net.DialTimeout("tcp", r.ServerAddr, 2*time.Second)
+	if err != nil {
+		log.Printf("%+v", errors.New("rpc.HealthCheck: Error while doing HealthCheck"))
+		return false
+	}
+	defer conn.Close()
+	log.Println("rpc.HealthCheck: healthCheck successfully")
+	return true
+}
+
 // GetCli 如果cli存在就返回 否则new一个
 func (r *RpcCli) GetCli() error {
+
+	/*
+		if r.Cli != nil && r.isHealth() {
+			return nil
+		}
+	*/
 	if r.Cli != nil {
 		return nil
 	}
 	conn, err := net.DialTimeout("tcp", r.ServerAddr, 5*time.Second)
+
 	if err != nil {
 		return errors.Wrap(err, "rpc.GetCli: Error while getting rpc cli from server")
 	}

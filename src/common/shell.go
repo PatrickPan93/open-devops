@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -24,6 +25,14 @@ func GetLocalIP() string {
 	return localIP
 }
 
+func GetHostname() string {
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Printf("%+v", errors.Wrap(err, "common.GetLocalIP: Error while getting Hostname"))
+		return ""
+	}
+	return hostname
+}
 func ShellCommand(shellStr string) (string, error) {
 	ctxt, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

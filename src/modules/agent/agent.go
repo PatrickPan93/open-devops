@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"open-devops/src/modules/agent/config"
 	"open-devops/src/modules/agent/info"
+	"open-devops/src/modules/agent/rpc"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -46,9 +46,16 @@ func main() {
 
 	log.Println("Loading config successfully")
 
+	rpcCli := rpc.InitRpcCli(agentConfig.RPCServerAddr)
+
+	if err := rpcCli.Ping(); err != nil {
+		log.Printf("%+v\n", err)
+		return
+	}
+
 	var g run.Group
 	ctx, cancel := context.WithCancel(context.Background())
-	fmt.Println(agentConfig.RPCServerAddr, ctx, cancel)
+
 	{
 		// 接收signal的chan
 		signalChan := make(chan os.Signal, 1)
@@ -81,7 +88,7 @@ func main() {
 	// 采集基础信息
 	{
 		g.Add(func() error {
-			err := info.TickerInfoCollectAndReport(ctx)
+			err := info.TickerInfoCollectAndReport(rpcCli, ctx)
 			return err
 		}, func(err error) {
 			cancel()

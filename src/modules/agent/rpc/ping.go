@@ -14,7 +14,7 @@ func (r *RpcCli) Ping() error {
 	}
 	// calling rpc server
 	// Method为server端注册的别名(type Server int)
-	// 后两个参数对应是server Ping fun的input和output
+	// 后两个参数对应是server Ping fun
 	err = r.Cli.Call("Server.Ping", "agent01", &msg)
 	if err != nil {
 		return errors.Wrap(err, "rpc.Ping: Error while pinging server")

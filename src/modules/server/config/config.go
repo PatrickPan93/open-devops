@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	MysqlS  []*MysqlConf `yaml:"mysql_s"`
-	RPCAddr string       `yaml:"rpc_addr"`
+	MysqlS   []*MysqlConf `yaml:"mysql_s"`
+	RPCAddr  string       `yaml:"rpc_addr"`
+	HTTPAddr string       `yaml:"http_addr"`
 }
 
 type MysqlConf struct {
