@@ -46,10 +46,14 @@ func (r *RpcCli) GetCli() error {
 		if r.Cli != nil && r.isHealth() {
 			return nil
 		}
+
 	*/
-	if r.Cli != nil {
-		return nil
-	}
+	/*
+		if r.Cli != nil {
+			return nil
+		}
+
+	*/
 	conn, err := net.DialTimeout("tcp", r.ServerAddr, 5*time.Second)
 
 	if err != nil {

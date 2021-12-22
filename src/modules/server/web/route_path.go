@@ -30,6 +30,7 @@ func NodePathAdd(c *gin.Context) {
 	}
 	common.JSONR(c, http.StatusOK, "path_add_success")
 }
+
 func NodePathQuery(c *gin.Context) {
 	var inputs common.NodeCommonReq
 	if err := c.BindJSON(&inputs); err != nil {

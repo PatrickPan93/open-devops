@@ -20,7 +20,7 @@ func (r *RpcCli) HostInfoReport(info *models.AgentCollectInfo) error {
 	// 后两个参数对应是server Ping fun的input和output
 	err = r.Cli.Call("Server.HostInfoReport", info, &msg)
 	if err != nil {
-		r.Cli.Close()
+		//r.Cli.Close()
 		log.Println(fmt.Sprintf("rpc.HostInfoReport: Error while reporting info to server: %+v", err))
 		return errors.Wrap(err, "rpc.HostInfoReport: Error while reporting info to server")
 	}

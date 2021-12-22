@@ -4,7 +4,7 @@ mysql_s:
     addr: "root:mypassword@tcp(localhost:3306)/open-devops?charset=utf8"
     max_con: 128
     max_idle: 16
-    debug: false
+    debug: true
 
 rpc_addr: 0.0.0.0:8000
 http_addr: 0.0.0.0:9000

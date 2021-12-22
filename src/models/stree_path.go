@@ -15,6 +15,7 @@ const (
 	queryAllPByG  = 1
 	queryALlPAByG = 2
 	queryAllAByPG = 3
+	queryGPAByGPA = 4
 
 	deleteGIfNoPUnderG = 1
 	deletePIfNoAUnderP = 2
@@ -211,6 +212,46 @@ func StreePathQuery(req *common.NodeCommonReq) []string {
 		log.Printf("%+v", errors.New(
 			fmt.Sprintf(
 				"StreePathQuery: Invalid group.department name '%s'", req.Node)))
+		return nil
+	case queryGPAByGPA:
+		if req.IsExpectedLenFormat(3) {
+			p := strings.Split(req.Node, ".")[1]
+			pathP := fmt.Sprintf("/%d", dbg.Id)
+			whereStr := "level=? and path=? and node_name=?"
+			dbp, err := StreePathGetOne(whereStr, department, pathP, p)
+			if err != nil {
+				log.Printf("%+v\n", err)
+				return nil
+			}
+			if dbp == nil {
+				log.Printf("%+v", errors.New(
+					fmt.Sprintf(
+						"StreePathQuery: p does not exist '%s'", p)))
+				return nil
+			}
+			pathA := fmt.Sprintf("%s/%d", dbp.Path, dbp.Id)
+			whereStr = "level = ? and path = ? and node_name = ?"
+			a := strings.Split(req.Node, ".")[2]
+
+			fmt.Println(pathA, a)
+			dba, err := StreePathGetOne(whereStr, application, pathA, a)
+			if err != nil {
+				log.Printf("%+v\n", err)
+				return nil
+			}
+			if dba == nil {
+				log.Printf("%+v", errors.New(
+					fmt.Sprintf(
+						"StreePathQuery: a does not exist '%s'", a)))
+				return nil
+			}
+			fullPath := fmt.Sprintf("%s.%s.%s", dbg.NodeName, dbp.NodeName, dba.NodeName)
+			res = append(res, fullPath)
+			return res
+		}
+		log.Printf("%+v", errors.New(
+			fmt.Sprintf(
+				"StreePathQuery: Invalid group.department.appolication name '%s'", req.Node)))
 		return nil
 	default:
 		log.Printf(
