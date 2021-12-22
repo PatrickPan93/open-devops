@@ -26,8 +26,25 @@ func ResourceMount(req *common.ResourceMountReq) (int64, error) {
 		ids += fmt.Sprintf("%d,", id)
 	}
 	ids = strings.TrimRight(ids, ",")
+
 	rawSql := fmt.Sprintf(`update %s set stree_group="%s", stree_product="%s", stree_app="%s" where id in (%s)`, req.ResourceType, g, p, a, ids)
 	log.Printf("models.ResourceMount: raw sql is %s\n", rawSql)
+	res, err := DB["stree"].Exec(rawSql)
+	if err != nil {
+		return 0, errors.Wrap(err, fmt.Sprintf("models.ResourceMount: error while executing raw sql: %s", rawSql))
+	}
+	return res.RowsAffected()
+}
+
+func ResourceUnmount(req *common.ResourceMountReq) (int64, error) {
+
+	ids := ""
+	for _, id := range req.ResourceIds {
+		ids += fmt.Sprintf("%d,", id)
+	}
+	ids = strings.TrimRight(ids, ",")
+	rawSql := fmt.Sprintf(`update %s set stree_group="%s", stree_product="%s", stree_app="%s"  where id in (%s)`, req.ResourceType, "", "", "", ids)
+	log.Printf("models.ResourceUnmount: raw sql is %s\n", rawSql)
 	res, err := DB["stree"].Exec(rawSql)
 	if err != nil {
 		return 0, errors.Wrap(err, fmt.Sprintf("models.ResourceMount: error while executing raw sql: %s", rawSql))
