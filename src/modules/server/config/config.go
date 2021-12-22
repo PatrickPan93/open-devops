@@ -8,9 +8,14 @@ import (
 )
 
 type Config struct {
-	MysqlS   []*MysqlConf `yaml:"mysql_s"`
-	RPCAddr  string       `yaml:"rpc_addr"`
-	HTTPAddr string       `yaml:"http_addr"`
+	MysqlS              []*MysqlConf         `yaml:"mysql_s"`
+	RPCAddr             string               `yaml:"rpc_addr"`
+	HTTPAddr            string               `yaml:"http_addr"`
+	PublicCloudSyncConf *PublicCloudSyncConf `yaml:"public_cloud_sync_conf"`
+}
+
+type PublicCloudSyncConf struct {
+	Enable bool `yaml:"enable"`
 }
 
 type MysqlConf struct {

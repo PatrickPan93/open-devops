@@ -8,3 +8,5 @@ mysql_s:
 
 rpc_addr: 0.0.0.0:8000
 http_addr: 0.0.0.0:9000
+public_cloud_sync_conf:
+  enable: true

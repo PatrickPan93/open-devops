@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"open-devops/src/models"
+	"open-devops/src/modules/server/cloud_sync"
 	"open-devops/src/modules/server/config"
 	"open-devops/src/modules/server/rpc"
 	"open-devops/src/modules/server/web"
@@ -140,6 +141,17 @@ func main() {
 				cancel()
 			})
 	}
-	g.Run()
+	{
+		//公有云同步
+		if serverConfig.PublicCloudSyncConf.Enable {
+			g.Add(func() error {
+				return cloud_sync.CloudSyncManager(ctx)
+			}, func(err error) {
+				log.Printf("%+v", errors.Wrap(err, "cloud_sync.CloudSyncManager running error"))
+				cancel()
+			})
+		}
 
+	}
+	g.Run()
 }
