@@ -22,7 +22,7 @@ const (
 	deleteAifGPAExist  = 3
 
 	group       = 1
-	department  = 2
+	product     = 2
 	application = 3
 
 	originPath = "0"
@@ -115,7 +115,7 @@ func StreePathQuery(req *common.NodeCommonReq) []string {
 		if req.IsExpectedLenFormat(1) {
 			pathP := fmt.Sprintf("/%d", dbg.Id)
 			whereStr := "level=? and path=?"
-			sps, err := StreePathGetMany(whereStr, department, pathP)
+			sps, err := StreePathGetMany(whereStr, product, pathP)
 			if err != nil {
 				log.Printf("%+v\n", err)
 				return nil
@@ -142,7 +142,7 @@ func StreePathQuery(req *common.NodeCommonReq) []string {
 			// 根据g查询所有的g.p.a
 			pathP := fmt.Sprintf("/%d", dbg.Id)
 			whereStr := "level=? and path=?"
-			sps, err := StreePathGetMany(whereStr, department, pathP)
+			sps, err := StreePathGetMany(whereStr, product, pathP)
 			if err != nil {
 				log.Printf("%+v\n", err)
 				return nil
@@ -186,7 +186,7 @@ func StreePathQuery(req *common.NodeCommonReq) []string {
 			p := strings.Split(req.Node, ".")[1]
 			pathP := fmt.Sprintf("/%d", dbg.Id)
 			whereStr := "level=? and path=? and node_name=?"
-			dbp, err := StreePathGetOne(whereStr, department, pathP, p)
+			dbp, err := StreePathGetOne(whereStr, product, pathP, p)
 			if err != nil {
 				log.Printf("%+v\n", err)
 				return nil
@@ -211,14 +211,14 @@ func StreePathQuery(req *common.NodeCommonReq) []string {
 		}
 		log.Printf("%+v", errors.New(
 			fmt.Sprintf(
-				"StreePathQuery: Invalid group.department name '%s'", req.Node)))
+				"StreePathQuery: Invalid group.product name '%s'", req.Node)))
 		return nil
 	case queryGPAByGPA:
 		if req.IsExpectedLenFormat(3) {
 			p := strings.Split(req.Node, ".")[1]
 			pathP := fmt.Sprintf("/%d", dbg.Id)
 			whereStr := "level=? and path=? and node_name=?"
-			dbp, err := StreePathGetOne(whereStr, department, pathP, p)
+			dbp, err := StreePathGetOne(whereStr, product, pathP, p)
 			if err != nil {
 				log.Printf("%+v\n", err)
 				return nil
@@ -251,7 +251,7 @@ func StreePathQuery(req *common.NodeCommonReq) []string {
 		}
 		log.Printf("%+v", errors.New(
 			fmt.Sprintf(
-				"StreePathQuery: Invalid group.department.appolication name '%s'", req.Node)))
+				"StreePathQuery: Invalid group.product.appolication name '%s'", req.Node)))
 		return nil
 	default:
 		log.Printf(
@@ -298,7 +298,7 @@ func StreePathAddOne(req *common.NodeCommonReq) error {
 		log.Println("StreePathAddOne: p creating...")
 		pathP := fmt.Sprintf("/%d", nodeG.Id)
 		nodeP := &StreePath{
-			Level:    department,
+			Level:    product,
 			Path:     pathP,
 			NodeName: p,
 		}
@@ -328,7 +328,7 @@ func StreePathAddOne(req *common.NodeCommonReq) error {
 		pathP := fmt.Sprintf("/%d", dbG.Id)
 		nodeP := &StreePath{
 
-			Level:    department,
+			Level:    product,
 			Path:     pathP,
 			NodeName: p,
 		}
@@ -444,7 +444,7 @@ func StreePathDelete(req *common.NodeCommonReq) int64 {
 		// g existed. trying to find p
 		pathP := fmt.Sprintf("/%d", dbg.Id)
 		whereStr := "level=? and path=?"
-		ps, err := StreePathGetMany(whereStr, department, pathP)
+		ps, err := StreePathGetMany(whereStr, product, pathP)
 		if err != nil {
 			log.Printf("%+v", errors.New(fmt.Sprintf("StreePathDelete: failed to get ps %s", pathP)))
 			return 0
@@ -466,7 +466,7 @@ func StreePathDelete(req *common.NodeCommonReq) int64 {
 		// g existed. trying to find p
 		pathP := fmt.Sprintf("/%d", dbg.Id)
 		nodeP := &StreePath{
-			Level:    department,
+			Level:    product,
 			Path:     pathP,
 			NodeName: path[1],
 		}
@@ -506,7 +506,7 @@ func StreePathDelete(req *common.NodeCommonReq) int64 {
 	case deleteAifGPAExist:
 		pathP := fmt.Sprintf("/%d", dbg.Id)
 		nodeP := &StreePath{
-			Level:    department,
+			Level:    product,
 			Path:     pathP,
 			NodeName: path[1],
 		}

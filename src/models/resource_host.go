@@ -115,3 +115,77 @@ func BatchDeleteResource(tableName string, idKey string, ids []string) (int64, e
 	}
 	return res.RowsAffected()
 }
+
+/*
+type nodeMap map[string][]int64
+
+type invertedIndex struct {
+	Lock     sync.Mutex
+	IndexMap map[string]nodeMap
+}
+
+func InvertIndexTest() {
+	var jsonMap map[string]string
+	var rId int64
+
+	var ii = &invertedIndex{
+		Lock:     sync.Mutex{},
+		IndexMap: make(map[string]nodeMap, 0),
+	}
+
+	// Getting all result from db
+	rhs := make([]ResourceHost, 0)
+	err := DB["stree"].Cols("id", "tags").Find(&rhs)
+	if err != nil {
+		log.Printf("%+v", errors.Wrap(err, ""))
+	}
+
+	// Get id and Tags value from result
+	ii.Lock.Lock()
+	for _, r := range rhs {
+		rId = r.Id
+		jsonBytes, _ := r.Tags.MarshalJSON()
+		json.Unmarshal(jsonBytes, &jsonMap)
+		fmt.Println(rId, jsonMap)
+
+		for k, v := range jsonMap {
+			//fmt.Println(k, v)
+			// 如果key不存在,则直接创建key以及node map
+			if result := ii.IndexMap[k]; result == nil {
+				ii.IndexMap[k] = nodeMap{v: {rId}}
+				continue
+			}
+			if nodeResult := ii.IndexMap[k][v]; nodeResult == nil {
+				ii.IndexMap[k][v] = []int64{rId}
+				//ii.IndexMap[k][v] = nodeMap{v: {rId}}
+				continue
+			}
+			iSlice := ii.IndexMap[k][v]
+			iSlice = append(iSlice, rId)
+			ii.IndexMap[k][v] = iSlice
+		}
+	}
+	ii.Lock.Unlock()
+	fmt.Println(ii.IndexMap)
+	bytes, _ := json.Marshal(ii.IndexMap)
+	fmt.Println(string(bytes))
+
+	if res := ii.IndexMap["test"]["test"]; res == nil {
+		fmt.Println("结果为空 触发其它logic")
+	}
+	if res := ii.IndexMap["arch"]["amd64"]; res != nil {
+		var rhs []ResourceHost
+		var strs []string
+		for _, v := range res {
+			strRes := strconv.FormatInt(v, 10)
+			strs = append(strs, strRes)
+		}
+		whereInStr := strings.Join(strs, ",")
+
+		whereStr := fmt.Sprintf("id in (%s)", whereInStr)
+		DB["stree"].Where(whereStr).Find(&rhs)
+		fmt.Println(rhs)
+	}
+}
+
+*/

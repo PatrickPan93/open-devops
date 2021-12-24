@@ -56,6 +56,7 @@ func main() {
 	models.StreePathAddTest()
 	//models.StreePathQueryTest()
 	//models.StreePathDeleteTest()
+	//models.InvertIndexTest()
 
 	// design the running group(multi go routine)
 	var g run.Group
