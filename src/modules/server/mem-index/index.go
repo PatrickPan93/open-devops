@@ -1,10 +1,17 @@
 package mem_index
 
 import (
+	"context"
 	"log"
 	"open-devops/src/common"
 	"open-devops/src/modules/server/config"
 	"strings"
+	"sync"
+	"time"
+
+	"github.com/ning1875/inverted-index/index"
+
+	"github.com/pkg/errors"
 
 	ii "github.com/ning1875/inverted-index"
 )
@@ -40,8 +47,8 @@ func Init(ims []*config.IndexModuleConf) {
 		switch i.ResourceName {
 		case common.ResourceHost:
 			mi := &HostIndex{
-				Ir:      ii.NewHeadReader(),
-				Logger:  nil,
+				Ir: ii.NewHeadReader(),
+				//Logger:  nil,
 				Modulus: i.Modulus,
 				Num:     i.Num,
 			}
@@ -52,4 +59,58 @@ func Init(ims []*config.IndexModuleConf) {
 		}
 	}
 	log.Printf("mem-index.Init: loadNum %d, details %s", loadNum, strings.Join(loadResource, ","))
+}
+
+func GetMatchIdsByIndex(req common.ResourceQueryReq) (matchIds []uint64) {
+	// 尝试从接口容器中根据查询资源类型获取indexer
+	ri, ok := indexContainer[req.ResourceType]
+	if !ok {
+		log.Printf("mem-index.GetMatchIdsByIndex: target index %s doesn't exist", req.ResourceType)
+		return
+	}
+
+	// 根据请求中的labels兑换获取matchers
+	matchers := common.FormatLabelMatcher(req.Labels)
+
+	// 根据matchers获取对应的IndexReader
+	p, err := ii.PostingsForMatchers(ri.GetIndexReader(), matchers...)
+
+	if err != nil {
+		log.Printf("%+v", errors.Wrap(err, "mem-index.GetMatchIdsByIndex: Error while getting IndexReader"))
+		return
+	}
+	matchIds, err = index.ExpandPostings(p)
+	if err != nil {
+		log.Printf("%+v", errors.Wrap(err, "mem-index.GetMatchIdsByIndex: Error while getting matchIds"))
+		return
+	}
+	return
+}
+
+func RevertedIndexSyncManager(ctx context.Context) error {
+	log.Println("RevertedIndexSyncManager started")
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("mem-index.RevertedIndexSyncManager: received term signal.. would be exit soon")
+			return nil
+		case <-ticker.C:
+			log.Printf("sync.RevertedIndexSyncManager: start doIndexFlush %d", len(indexContainer))
+			doIndexFlush()
+		}
+	}
+}
+
+func doIndexFlush() {
+	var wg sync.WaitGroup
+	wg.Add(len(indexContainer))
+	for _, ir := range indexContainer {
+		go func() {
+			defer wg.Done()
+			ir.FlushIndex()
+		}()
+	}
+	wg.Wait()
 }

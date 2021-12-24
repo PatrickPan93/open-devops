@@ -13,6 +13,16 @@ type ResourceQueryReq struct {
 	TargetLabel  string          `json:"target_label"`
 }
 
+// QueryResponse 响应结构体
+type QueryResponse struct {
+	Code        int         `json:"code"`
+	CurrentPage int         `json:"current_page"`
+	PageSize    int         `json:"page_size"`
+	PageCount   int         `json:"page_count"`
+	TotalCount  int         `json:"total_count"`
+	Result      interface{} `json:"result"`
+}
+
 // SingleTagReq 查询标签
 type SingleTagReq struct {
 	Key   string `json:"key" binding:"required"`   // 标签名称

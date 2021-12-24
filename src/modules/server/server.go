@@ -159,5 +159,15 @@ func main() {
 		}
 
 	}
+	{
+		// 倒排索引更新
+
+		g.Add(func() error {
+			return mem_index.RevertedIndexSyncManager(ctx)
+		}, func(err error) {
+			log.Printf("%+v", errors.Wrap(err, "mem_index.RevertedIndexSyncManager running error"))
+			cancel()
+		})
+	}
 	g.Run()
 }

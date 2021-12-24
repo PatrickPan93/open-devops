@@ -85,6 +85,11 @@ func (rh *ResourceHost) AddOne() (int64, error) {
 func (rh *ResourceHost) UpdateByUid(uid string) (int64, error) {
 	return DB["stree"].Where("uid=?", uid).Update(rh)
 }
+
+func (rh *ResourceHost) Count() (int64, error) {
+	return DB["stree"].Where("id>0").Count(rh)
+}
+
 func GetHostUidAndHash() (map[string]string, error) {
 	var objs []ResourceHost
 	err := DB["stree"].Cols("uid", "hash").Find(&objs)
@@ -114,6 +119,26 @@ func BatchDeleteResource(tableName string, idKey string, ids []string) (int64, e
 		return 0, errors.Wrap(err, fmt.Sprintf("models.BatchDeleteResource: error while deleting resource_hosts: %s", ids))
 	}
 	return res.RowsAffected()
+}
+
+func ResourceHostGetManyWithLimit(limit, offset int, whereStr string, args ...interface{}) ([]ResourceHost, error) {
+	var objs []ResourceHost
+	err := DB["stree"].Where(whereStr, args...).Limit(limit, offset).Find(&objs)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("models.ResourceHostGetManyWithLimit: error while getting resource_hosts by Ids: %s", whereStr))
+	}
+	return objs, nil
+
+}
+
+func ResourceHostGetMany(whereStr string, args ...interface{}) ([]ResourceHost, error) {
+	var objs []ResourceHost
+	err := DB["stree"].Where(whereStr, args...).Find(&objs)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("models.ResourceHostGetMany: error while getting resource_hosts by Ids: %s", whereStr))
+	}
+	return objs, nil
+
 }
 
 /*
