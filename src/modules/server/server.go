@@ -6,6 +6,7 @@ import (
 	"open-devops/src/models"
 	"open-devops/src/modules/server/cloud_sync"
 	"open-devops/src/modules/server/config"
+	mem_index "open-devops/src/modules/server/mem-index"
 	"open-devops/src/modules/server/rpc"
 	"open-devops/src/modules/server/web"
 	"os"
@@ -53,6 +54,10 @@ func main() {
 	// Init MySQL
 	models.InitMySQL(serverConfig.MysqlS)
 
+	// Init Inverted-index
+	mem_index.Init(serverConfig.IndexModulesConf)
+
+	// testing function
 	models.StreePathAddTest()
 	//models.StreePathQueryTest()
 	//models.StreePathDeleteTest()

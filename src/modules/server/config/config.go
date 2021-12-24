@@ -12,12 +12,21 @@ type Config struct {
 	RPCAddr             string               `yaml:"rpc_addr"`
 	HTTPAddr            string               `yaml:"http_addr"`
 	PublicCloudSyncConf *PublicCloudSyncConf `yaml:"public_cloud_sync_conf"`
+	IndexModulesConf    []*IndexModuleConf   `yaml:"index_modules_conf"`
 }
 
+// PublicCloudSyncConf 公有云同步开关
 type PublicCloudSyncConf struct {
 	Enable bool `yaml:"enable"`
 }
 
+// IndexModuleConf I 倒排索引配置
+type IndexModuleConf struct {
+	Enable       bool   `yaml:"enable"`
+	ResourceName string `yaml:"resource_name"`
+	Modulus      int    `yaml:"modulus"`
+	Num          int    `yaml:"num"`
+}
 type MysqlConf struct {
 	Name    string `yaml:"name"`
 	Addr    string `yaml:"addr"`
