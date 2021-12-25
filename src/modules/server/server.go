@@ -179,8 +179,7 @@ func main() {
 		})
 	}
 	{
-		// 资源统计
-
+		// 资源统计通过prometheus打点在metrics expose出去
 		g.Add(func() error {
 			return statistics.TreeNodeStatisticsManager(ctx)
 		}, func(err error) {

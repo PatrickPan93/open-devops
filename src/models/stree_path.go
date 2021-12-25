@@ -16,6 +16,7 @@ const (
 	queryALlPAByG = 2
 	queryAllAByPG = 3
 	queryGPAByGPA = 4
+	queryAllGPA   = 5
 
 	deleteGIfNoPUnderG = 1
 	deletePIfNoAUnderP = 2
@@ -253,6 +254,48 @@ func StreePathQuery(req *common.NodeCommonReq) []string {
 			fmt.Sprintf(
 				"StreePathQuery: Invalid group.product.appolication name '%s'", req.Node)))
 		return nil
+	case queryAllGPA:
+		whereStr := "id>0"
+		ps, err := StreePathGetMany(whereStr)
+		if err != nil {
+			log.Printf("%+v\n", errors.Wrap(err, "StreePathQuery: Error while getting all GPA"))
+			return nil
+		}
+		// 统计g的Map
+		existMapGS := make(map[int64]StreePath)
+		// 统计p的Map
+		existMapPS := make(map[int64]StreePath)
+		// 统计a的Map
+		existMapAS := make(map[int64]StreePath)
+		for _, p := range ps {
+			switch p.Level {
+			case group:
+				existMapGS[p.Id] = p
+			case product:
+				existMapPS[p.Id] = p
+			case application:
+				existMapAS[p.Id] = p
+			}
+			// 每拿出一个g
+			for gid, g := range existMapGS {
+				// 都遍历一次p map
+				for pid, p := range existMapPS {
+					// 根据g的id拼接p的path
+					pPath := fmt.Sprintf("/%d", gid)
+					// 如果相同，说明这个g是这个p的父级资源
+					if pPath == p.Path {
+						for _, a := range existMapAS {
+							// 根据pPath加pid拼接a的path
+							aPath := fmt.Sprintf("%s/%d", pPath, pid)
+							if aPath == a.Path {
+								res = append(res, fmt.Sprintf("%s.%s.%s", g.NodeName, p.NodeName, a.NodeName))
+							}
+						}
+					}
+				}
+			}
+		}
+		return res
 	default:
 		log.Printf(
 			"%+v", errors.New(
