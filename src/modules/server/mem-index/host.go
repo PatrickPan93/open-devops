@@ -6,6 +6,8 @@ import (
 	"log"
 	"open-devops/src/models"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/ning1875/inverted-index/labels"
 
@@ -22,34 +24,42 @@ type HostIndex struct {
 }
 
 func (hi *HostIndex) FlushIndex() {
-
+	startTime := time.Now()
 	// TODO: 由于目前数据库id为自增,当数据经过一些增删改查后, id变得不连续, 目前采用load全量id进行取余来进行分片, 但全量扫表取出id不是比较好的方式，待优化
 	// 从数据库总load出id集
 	IdsDB, err := models.ResourceHostGetIdsTotal()
-
 	if err != nil {
 		log.Printf("%+v", errors.Wrap(err, "mem-index.FlushIndex: Error while counting num of resource_host"))
 		return
 	}
+
 	var idStr string
+	var mine int
 	// 根据配置,如果没有开启shard 那么将生成全量idStr
-	for _, rh := range IdsDB {
-		if hi.Modulus == 0 {
-			log.Printf("mem-index.FlushIndex: no shard configured, current Modulus is %d\n", hi.Modulus)
-			for _, v := range IdsDB {
-				idStr += fmt.Sprintf("%d,", v.Id)
-			}
-			break
+	//for _, rh := range IdsDB {
+	switch hi.Modulus {
+	case 0:
+		log.Printf("mem-index.FlushIndex: no shard configured, current Modulus is %d\n", hi.Modulus)
+		for _, v := range IdsDB {
+			idStr += fmt.Sprintf("%d,", v.Id)
+			mine++
 		}
-		// 如果开启了那么将使用id对Modulus进行取余,符合当前分片该持有的数据则加入到idStr
-		// 如 id为200 当前应该存在分片数量Modulus为5,204%5=4, 当前分片号为4, 那么本节点将持有该缓存
-		if int(rh.Id)%hi.Modulus == hi.Num {
-			idStr += fmt.Sprintf("%d,", rh.Id)
-			continue
+		fmt.Println(idStr)
+	default:
+		log.Printf("mem-index.FlushIndex: shard configured, current Modulus is %d, current shard num is %d", hi.Modulus, hi.Num)
+		for rowNum := 0; rowNum < len(IdsDB); rowNum++ {
+			// 如果开启了那么将使用行数对Modulus进行取余,符合当前分片该持有的数据则加入到idStr
+			// 如 行数为第200行 当前应该存在分片数量Modulus为5,200%5=0, 当前分片号为0, 那么本节点将持有该缓存
+			if rowNum%hi.Modulus == hi.Num {
+				idStr += fmt.Sprintf("%d,", IdsDB[rowNum].Id)
+				fmt.Println(idStr)
+				mine++
+			}
 		}
 	}
-
-	whereInSql := "id > 0"
+	log.Printf("mem-index.FlushIndex: sharding calculated, total data %d, the instance will get %d by cache\n", len(IdsDB), mine)
+	idStr = strings.TrimRight(idStr, ",")
+	whereInSql := fmt.Sprintf("id in (%s)", idStr)
 	objs, err := models.ResourceHostGetMany(whereInSql)
 	//objs, err := models.ResourceHostGetManyWithLimit(int(limit), int(offset), whereInSql)
 
@@ -122,6 +132,22 @@ func (hi *HostIndex) FlushIndex() {
 		}
 	}
 	hi.Ir.Reset(thisH)
+	log.Printf("mem-index.FlushIndex: flush index finish, took %v", time.Since(startTime).Seconds())
+	/*
+		go func() {
+			log.Printf("mem-index.FlushIndex: Adding GPA to PATH")
+			for node := range thisGPAS {
+				inputs := common.NodeCommonReq{
+					Node: node,
+				}
+				err := models.StreePathAddOne(&inputs)
+				if err != nil {
+					log.Printf("%+v", errors.Wrap(err, "mem-index.FlushIndex: Adding GPA to PATH error"))
+				}
+			}
+		}()
+
+	*/
 }
 
 //map转换为labels

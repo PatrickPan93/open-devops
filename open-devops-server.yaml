@@ -14,5 +14,5 @@ public_cloud_sync_conf:
 index_modules_conf:
   - resource_name: resource_host
     enable: true
-    modules: 0
+    modulus: 0
     num: 0

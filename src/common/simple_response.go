@@ -12,7 +12,6 @@ type RespJson struct {
 	Msg   string `json:"message,omitempty"`
 }
 
-// func JSONR(c *gin.Context, wcode int, msg interface{}) (werror error) {
 func JSONR(c *gin.Context, arg ...interface{}) (werror error) {
 	var (
 		wcode int

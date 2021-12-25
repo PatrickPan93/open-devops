@@ -153,7 +153,9 @@ func main() {
 			g.Add(func() error {
 				return cloud_sync.CloudSyncManager(ctx)
 			}, func(err error) {
-				log.Printf("%+v", errors.Wrap(err, "cloud_sync.CloudSyncManager running error"))
+				if err != nil {
+					log.Printf("%+v", errors.Wrap(err, "cloud_sync.CloudSyncManager running error"))
+				}
 				cancel()
 			})
 		}
@@ -165,7 +167,9 @@ func main() {
 		g.Add(func() error {
 			return mem_index.RevertedIndexSyncManager(ctx)
 		}, func(err error) {
-			log.Printf("%+v", errors.Wrap(err, "mem_index.RevertedIndexSyncManager running error"))
+			if err != nil {
+				log.Printf("%+v", errors.Wrap(err, "mem_index.RevertedIndexSyncManager running error"))
+			}
 			cancel()
 		})
 	}

@@ -27,7 +27,14 @@ type QueryResponse struct {
 type SingleTagReq struct {
 	Key   string `json:"key" binding:"required"`   // 标签名称
 	Value string `json:"value" binding:"required"` // 标签值, 可以是正则表达式
-	Type  int    `json:"type" binding:"required"`  // 查询类型1-4 1: 等于 2: 不等于 3: 正则 4: 正则非
+	Type  int    `json:"type" binding:"required"`
+	/* 查询类型1-4
+	1: MatchEqual,
+	2: MatchNotEqual,
+	3: MatchRegexp,
+	4: MatchNotRegexp,
+	*/
+
 }
 
 // FormatLabelMatcher 将前段请求转化为[]*labels.Matcher
