@@ -14,13 +14,19 @@ func configRoutes(r *gin.Engine) {
 			c.String(http.StatusOK, "pong")
 		})
 		api.GET("now-ts", GetNowTs)
+
+		// path
 		api.POST("/node-path", NodePathAdd)
 		api.GET("/node-path", NodePathQuery)
 		api.DELETE("/node-path", NodePathDelete)
 
+		// resource
 		api.POST("/resource-mount", ResourceMount)
 		api.DELETE("/resource-unmount", ResourceUnmount)
 		api.POST("/resource-query", ResourceQuery)
+		api.GET("/resource-group", ResourceGroup)
+
+		api.GET("/resource-distribution", GetLabelDistribution)
 	}
 }
 

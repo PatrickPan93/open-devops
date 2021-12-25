@@ -137,3 +137,42 @@ func ResourceQuery(c *gin.Context) {
 	resp.Result = res
 	common.JSONR(c, resp)
 }
+
+// ResourceGroup 根据target_labels提供分布情况(类似于group by)
+func ResourceGroup(c *gin.Context) {
+
+	resourceType := c.DefaultQuery("resource_type", common.ResourceHost)
+	label := c.DefaultQuery("label", "region")
+
+	// Check the resourceType index has registered to index container
+	ok := mem_index.JudgeResourceIndexExists(resourceType)
+	if !ok {
+		common.JSONR(c, http.StatusBadRequest, fmt.Sprintf("ResourceType_index_not_exists: %v", resourceType))
+		return
+	}
+
+	// 获取对应资源的索引reader
+	_, ri := mem_index.GetResourceIndexReader(resourceType)
+	res := ri.GetIndexReader().GetGroupByLabel(label)
+	common.JSONR(c, res)
+}
+
+func GetLabelDistribution(c *gin.Context) {
+	var inputs common.ResourceQueryReq
+	if err := c.BindJSON(&inputs); err != nil {
+		common.JSONR(c, http.StatusBadRequest, err)
+		return
+	}
+	// Check the resourceType index has registered to index container
+	ok, ri := mem_index.GetResourceIndexReader(inputs.ResourceType)
+	if !ok {
+		common.JSONR(c, http.StatusBadRequest, fmt.Sprintf("ResourceType_index_not_exists: %v", inputs.ResourceType))
+		return
+	}
+	matchIds := mem_index.GetMatchIdsByIndex(inputs)
+
+	res := ri.GetIndexReader().GetGroupDistributionByLabel(inputs.TargetLabel, matchIds)
+
+	common.JSONR(c, res)
+
+}

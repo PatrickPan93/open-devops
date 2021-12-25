@@ -61,6 +61,12 @@ func Init(ims []*config.IndexModuleConf) {
 	log.Printf("mem-index.Init: loadNum %d, details %s", loadNum, strings.Join(loadResource, ","))
 }
 
+func GetResourceIndexReader(name string) (bool, ResourceIndexer) {
+	ri, ok := indexContainer[name]
+	return ok, ri
+}
+
+// GetMatchIdsByIndex 根据查询请求在倒排索引中查找符合情况的id集
 func GetMatchIdsByIndex(req common.ResourceQueryReq) (matchIds []uint64) {
 	// 尝试从接口容器中根据查询资源类型获取indexer
 	ri, ok := indexContainer[req.ResourceType]

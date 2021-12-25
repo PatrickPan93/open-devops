@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"open-devops/src/common"
 	"open-devops/src/models"
 	"strconv"
 	"strings"
@@ -133,21 +134,21 @@ func (hi *HostIndex) FlushIndex() {
 	}
 	hi.Ir.Reset(thisH)
 	log.Printf("mem-index.FlushIndex: flush index finish, took %v", time.Since(startTime).Seconds())
-	/*
-		go func() {
-			log.Printf("mem-index.FlushIndex: Adding GPA to PATH")
-			for node := range thisGPAS {
-				inputs := common.NodeCommonReq{
-					Node: node,
-				}
-				err := models.StreePathAddOne(&inputs)
-				if err != nil {
-					log.Printf("%+v", errors.Wrap(err, "mem-index.FlushIndex: Adding GPA to PATH error"))
-				}
-			}
-		}()
 
-	*/
+	// 同步path数据到stree_path表
+	go func() {
+		log.Printf("mem-index.FlushIndex: Adding GPA to PATH")
+		for node := range thisGPAS {
+			inputs := common.NodeCommonReq{
+				Node: node,
+			}
+			err := models.StreePathAddOne(&inputs)
+			if err != nil {
+				log.Printf("%+v", errors.Wrap(err, "mem-index.FlushIndex: Adding GPA to PATH error"))
+			}
+		}
+	}()
+
 }
 
 //map转换为labels
