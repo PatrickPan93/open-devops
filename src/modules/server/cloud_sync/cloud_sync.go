@@ -4,8 +4,11 @@ import (
 	"context"
 	"log"
 	"open-devops/src/common"
+	"open-devops/src/modules/server/metric"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type CloudResource interface {
@@ -56,10 +59,13 @@ func CloudSyncManager(ctx context.Context) error {
 func doCloudSync() {
 	var wg sync.WaitGroup
 	wg.Add(len(cloudResourceContainer))
-	for _, sy := range cloudResourceContainer {
+	for name, sy := range cloudResourceContainer {
 		go func() {
+			start := time.Now()
 			defer wg.Done()
 			sy.sync()
+			// prometheus 打点
+			metric.PublicCloudSyncDuration.With(prometheus.Labels{common.LABEL_RESOURCE_TYPE: name}).Set(time.Since(start).Seconds())
 		}()
 	}
 	wg.Wait()

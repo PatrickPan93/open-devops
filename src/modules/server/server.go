@@ -7,7 +7,9 @@ import (
 	"open-devops/src/modules/server/cloud_sync"
 	"open-devops/src/modules/server/config"
 	mem_index "open-devops/src/modules/server/mem-index"
+	"open-devops/src/modules/server/metric"
 	"open-devops/src/modules/server/rpc"
+	"open-devops/src/modules/server/statistics"
 	"open-devops/src/modules/server/web"
 	"os"
 	"os/signal"
@@ -58,10 +60,13 @@ func main() {
 	mem_index.Init(serverConfig.IndexModulesConf)
 
 	// testing function
-	models.StreePathAddTest()
+	//models.StreePathAddTest()
 	//models.StreePathQueryTest()
 	//models.StreePathDeleteTest()
 	//models.InvertIndexTest()
+
+	// 注册prometheus metrics
+	metric.NewMetrics()
 
 	// design the running group(multi go routine)
 	var g run.Group
@@ -169,6 +174,18 @@ func main() {
 		}, func(err error) {
 			if err != nil {
 				log.Printf("%+v", errors.Wrap(err, "mem_index.RevertedIndexSyncManager running error"))
+			}
+			cancel()
+		})
+	}
+	{
+		// 资源统计
+
+		g.Add(func() error {
+			return statistics.TreeNodeStatisticsManager(ctx)
+		}, func(err error) {
+			if err != nil {
+				log.Printf("%+v", errors.Wrap(err, "statistics.TreeNodeStatisticsManager running error"))
 			}
 			cancel()
 		})

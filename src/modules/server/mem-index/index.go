@@ -5,9 +5,12 @@ import (
 	"log"
 	"open-devops/src/common"
 	"open-devops/src/modules/server/config"
+	"open-devops/src/modules/server/metric"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/ning1875/inverted-index/index"
 
@@ -66,6 +69,10 @@ func GetResourceIndexReader(name string) (bool, ResourceIndexer) {
 	return ok, ri
 }
 
+func GetAllResourceIndexReader() map[string]ResourceIndexer {
+	return indexContainer
+}
+
 // GetMatchIdsByIndex 根据查询请求在倒排索引中查找符合情况的id集
 func GetMatchIdsByIndex(req common.ResourceQueryReq) (matchIds []uint64) {
 	// 尝试从接口容器中根据查询资源类型获取indexer
@@ -103,19 +110,23 @@ func RevertedIndexSyncManager(ctx context.Context) error {
 			log.Println("mem-index.RevertedIndexSyncManager: received term signal.. would be exit soon")
 			return nil
 		case <-ticker.C:
-			log.Printf("sync.RevertedIndexSyncManager: start doIndexFlush %d", len(indexContainer))
+			log.Printf("mem-index.RevertedIndexSyncManager: start doIndexFlush %d", len(indexContainer))
 			doIndexFlush()
 		}
 	}
 }
 
 func doIndexFlush() {
+
 	var wg sync.WaitGroup
 	wg.Add(len(indexContainer))
-	for _, ir := range indexContainer {
+	for name, ir := range indexContainer {
 		go func() {
 			defer wg.Done()
+			start := time.Now()
 			ir.FlushIndex()
+			// prometheus 打点
+			metric.IndexFlushDuration.With(prometheus.Labels{common.LABEL_RESOURCE_TYPE: name}).Set(time.Since(start).Seconds())
 		}()
 	}
 	wg.Wait()

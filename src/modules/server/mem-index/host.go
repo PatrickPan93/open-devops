@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"open-devops/src/common"
 	"open-devops/src/models"
+	"open-devops/src/modules/server/metric"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/ning1875/inverted-index/labels"
 
@@ -24,10 +28,12 @@ type HostIndex struct {
 }
 
 func (hi *HostIndex) FlushIndex() {
+
 	startTime := time.Now()
 	// TODO: 由于目前数据库id为自增,当数据经过一些增删改查后, id变得不连续, 目前采用load全量id进行取余来进行分片, 但全量扫表取出id不是比较好的方式，待优化
 	// 从数据库总load出id集
 	IdsDB, err := models.ResourceHostGetIdsTotal()
+
 	if err != nil {
 		log.Printf("%+v", errors.Wrap(err, "mem-index.FlushIndex: Error while counting num of resource_host"))
 		return
@@ -58,6 +64,10 @@ func (hi *HostIndex) FlushIndex() {
 		}
 	}
 	log.Printf("mem-index.FlushIndex: sharding calculated, total data %d, the instance will get %d by cache\n", len(IdsDB), mine)
+
+	// prometheus 打点
+	metric.IndexResourceNumCount.With(prometheus.Labels{common.LABEL_RESOURCE_TYPE: common.ResourceHost}).Set(float64(mine))
+
 	idStr = strings.TrimRight(idStr, ",")
 	whereInSql := fmt.Sprintf("id in (%s)", idStr)
 	objs, err := models.ResourceHostGetMany(whereInSql)

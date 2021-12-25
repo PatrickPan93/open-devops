@@ -9,7 +9,10 @@ import (
 	"math/rand"
 	"open-devops/src/common"
 	"open-devops/src/models"
+	"open-devops/src/modules/server/metric"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type HostSync struct {
@@ -91,6 +94,9 @@ func (hs *HostSync) sync() {
 		suDelNum = int(num)
 	}
 	timeTook := time.Since(start)
+	// prometheus 打点
+	metric.PublicCloudSyncResourceNumCount.With(prometheus.Labels{common.LABEL_RESOURCE_TYPE: common.ResourceHost}).Set(float64(len(resourceHosts)))
+
 	log.Printf("cloud_sync.sync:\n public.cloud.num: %d\n, db.num: %d\n, toAddNum, %d\n, toModNum: %d\n, toDelNum: %d\n, suAddNum: %d\n, suModNum: %d\n, suDelNum: %d\n, timeTook: %s\n", len(resourceHosts), len(uuidHashM), toAddNum, toModNum, toDelNum, suAddNum, suModNum, suDelNum, timeTook)
 }
 
@@ -121,7 +127,7 @@ func genMockResourceHost() []models.ResourceHost {
 		return rand.Intn(n - 1)
 	}
 	frNum := func() int {
-		return int(rand.Int63n(60-25) + 25)
+		return int(rand.Int63n(60-25) + 1000)
 	}
 	hs := make([]models.ResourceHost, 0)
 
