@@ -22,41 +22,42 @@ type HostIndex struct {
 }
 
 func (hi *HostIndex) FlushIndex() {
-	var limit int64
-	var offset int64
-	r := new(models.ResourceHost)
-	// 计算resource_host表中数据量
-	count, err := r.Count()
+
+	// TODO: 由于目前数据库id为自增,当数据经过一些增删改查后, id变得不连续, 目前采用load全量id进行取余来进行分片, 但全量扫表取出id不是比较好的方式，待优化
+	// 从数据库总load出id集
+	IdsDB, err := models.ResourceHostGetIdsTotal()
+
 	if err != nil {
 		log.Printf("%+v", errors.Wrap(err, "mem-index.FlushIndex: Error while counting num of resource_host"))
 		return
 	}
-	for i := 0; i < int(count); i++ {
-		// 如果不存在分片（来源于配置)
+	var idStr string
+	// 根据配置,如果没有开启shard 那么将生成全量idStr
+	for _, rh := range IdsDB {
 		if hi.Modulus == 0 {
-			limit = count
-			offset = 0
+			log.Printf("mem-index.FlushIndex: no shard configured, current Modulus is %d\n", hi.Modulus)
+			for _, v := range IdsDB {
+				idStr += fmt.Sprintf("%d,", v.Id)
+			}
 			break
 		}
-		/*
-			//TODO 解决分片取数据问题
-				// 如果对i取模,与当前节点分片编号相同,则keep住该id
-				if i%hi.Modulus == hi.Num {
-					ids = append(ids, i)
-					continue
-				}
-
-		*/
+		// 如果开启了那么将使用id对Modulus进行取余,符合当前分片该持有的数据则加入到idStr
+		// 如 id为200 当前应该存在分片数量Modulus为5,204%5=4, 当前分片号为4, 那么本节点将持有该缓存
+		if int(rh.Id)%hi.Modulus == hi.Num {
+			idStr += fmt.Sprintf("%d,", rh.Id)
+			continue
+		}
 	}
 
 	whereInSql := "id > 0"
-	//objs, err := models.ResourceHostGetManyWithLimit(ids[len(ids)-1], , whereInSql)
-	objs, err := models.ResourceHostGetManyWithLimit(int(limit), int(offset), whereInSql)
+	objs, err := models.ResourceHostGetMany(whereInSql)
+	//objs, err := models.ResourceHostGetManyWithLimit(int(limit), int(offset), whereInSql)
 
 	if err != nil {
-		log.Printf("%+v", errors.Wrapf(err, "mem-index.FlushIndex: Error while getting data from resource_host by ids %d\n", limit))
+		log.Printf("%+v", errors.Wrapf(err, "mem-index.FlushIndex: Error while getting data from resource_host by ids %d\n", idStr))
 		return
 	}
+
 	// 自动刷node path(g.p.a)
 	thisGPAS := map[string]struct{}{}
 

@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"net/http"
 	"open-devops/src/common"
@@ -119,6 +120,12 @@ func ResourceQuery(c *gin.Context) {
 		PageCount:   pageCount,
 		TotalCount:  totalCount,
 		Result:      nil,
+	}
+
+	if len(matchIds) == 0 {
+		common.JSONR(c, http.StatusBadRequest, "failed to get matchIds by index")
+		log.Println("route_resource.ResourceQuery: failed to get matchIds by index")
+		return
 	}
 	res, err := models.ResourceQuery(inputs.ResourceType, matchIds, limit, offset)
 	if err != nil {

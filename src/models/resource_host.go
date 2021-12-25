@@ -141,6 +141,16 @@ func ResourceHostGetMany(whereStr string, args ...interface{}) ([]ResourceHost, 
 
 }
 
+func ResourceHostGetIdsTotal() ([]ResourceHost, error) {
+	var objs []ResourceHost
+	err := DB["stree"].Cols("id").Where("id>0").Find(&objs)
+	if err != nil {
+		return nil, errors.Wrap(err, "models.ResourceHostGetIdsTotal: error while getting ids s")
+	}
+	return objs, nil
+
+}
+
 /*
 type nodeMap map[string][]int64
 
