@@ -6,11 +6,16 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
 )
 
 func StartGin(httpAddr string) error {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+
+	// prometheus
+	p := ginprometheus.NewPrometheus("gin")
+	p.Use(r)
 	r.Use(gin.Logger())
 	// 设置路由
 	configRoutes(r)

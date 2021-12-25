@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"open-devops/src/common"
 	"open-devops/src/models"
 	"strconv"
 	"strings"
@@ -45,7 +44,7 @@ func (hi *HostIndex) FlushIndex() {
 			idStr += fmt.Sprintf("%d,", v.Id)
 			mine++
 		}
-		fmt.Println(idStr)
+		//fmt.Println(idStr)
 	default:
 		log.Printf("mem-index.FlushIndex: shard configured, current Modulus is %d, current shard num is %d", hi.Modulus, hi.Num)
 		for rowNum := 0; rowNum < len(IdsDB); rowNum++ {
@@ -53,7 +52,7 @@ func (hi *HostIndex) FlushIndex() {
 			// 如 行数为第200行 当前应该存在分片数量Modulus为5,200%5=0, 当前分片号为0, 那么本节点将持有该缓存
 			if rowNum%hi.Modulus == hi.Num {
 				idStr += fmt.Sprintf("%d,", IdsDB[rowNum].Id)
-				fmt.Println(idStr)
+				//fmt.Println(idStr)
 				mine++
 			}
 		}
@@ -135,19 +134,22 @@ func (hi *HostIndex) FlushIndex() {
 	hi.Ir.Reset(thisH)
 	log.Printf("mem-index.FlushIndex: flush index finish, took %v", time.Since(startTime).Seconds())
 
-	// 同步path数据到stree_path表
-	go func() {
-		log.Printf("mem-index.FlushIndex: Adding GPA to PATH")
-		for node := range thisGPAS {
-			inputs := common.NodeCommonReq{
-				Node: node,
+	/*
+		// 同步path数据到stree_path表
+		go func() {
+			log.Printf("mem-index.FlushIndex: Adding GPA to PATH")
+			for node := range thisGPAS {
+				inputs := common.NodeCommonReq{
+					Node: node,
+				}
+				err := models.StreePathAddOne(&inputs)
+				if err != nil {
+					log.Printf("%+v", errors.Wrap(err, "mem-index.FlushIndex: Adding GPA to PATH error"))
+				}
 			}
-			err := models.StreePathAddOne(&inputs)
-			if err != nil {
-				log.Printf("%+v", errors.Wrap(err, "mem-index.FlushIndex: Adding GPA to PATH error"))
-			}
-		}
-	}()
+		}()
+
+	*/
 
 }
 
