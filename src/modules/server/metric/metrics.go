@@ -39,6 +39,27 @@ var (
 		Name: "resource_num_cloud_provider_count",
 		Help: "Number of resources group by cloud provider tag",
 	}, []string{common.LABEL_RESOURCE_TYPE, common.LABEL_CLOUD_PROVIDER})
+
+	// GPA
+	GPAAllNumRegionCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "gpa_all_region_num_count",
+		Help: "Num gpa of all with tag region",
+	}, []string{common.LABEL_GPA_NAME, common.LABEL_RESOURCE_TYPE, common.LABEL_REGION})
+
+	GPAAllNumCloudProviderCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "gpa_all_cloud_provider_num_count",
+		Help: "Num gpa of all with tag cloud provider",
+	}, []string{common.LABEL_GPA_NAME, common.LABEL_RESOURCE_TYPE, common.LABEL_CLOUD_PROVIDER})
+
+	GPAAllNumClusterCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "gpa_all_cluster_num_count",
+		Help: "Num gpa of all with tag cluster",
+	}, []string{common.LABEL_GPA_NAME, common.LABEL_RESOURCE_TYPE, common.LABEL_CLUSTER})
+
+	GPAAllNumInstanceTypeCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "gpa_all_instance_type_num_count",
+		Help: "Num gpa of all with tag instance type",
+	}, []string{common.LABEL_GPA_NAME, common.LABEL_RESOURCE_TYPE, common.LABEL_INSTANCE_TYPE})
 )
 
 // NewMetrics 注册Metrics
@@ -52,4 +73,10 @@ func NewMetrics() {
 
 	prometheus.DefaultRegisterer.MustRegister(ResourceNumRegionCount)
 	prometheus.DefaultRegisterer.MustRegister(ResourceNumCloudProviderCount)
+
+	prometheus.DefaultRegisterer.MustRegister(GPAAllNumClusterCount)
+	prometheus.DefaultRegisterer.MustRegister(GPAAllNumInstanceTypeCount)
+	prometheus.DefaultRegisterer.MustRegister(GPAAllNumRegionCount)
+	prometheus.DefaultRegisterer.MustRegister(GPAAllNumCloudProviderCount)
+
 }

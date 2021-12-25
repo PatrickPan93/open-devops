@@ -295,6 +295,7 @@ func StreePathQuery(req *common.NodeCommonReq) []string {
 				}
 			}
 		}
+		sort.Strings(res)
 		return res
 	default:
 		log.Printf(

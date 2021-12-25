@@ -104,7 +104,7 @@ func (hs *HostSync) sync() {
 func genMockResourceHost() []models.ResourceHost {
 	rand.Seed(time.Now().UnixNano())
 	// Rand g.p.a
-	randGs := []string{"inf", "ads", "web", "sys"}
+	randGs := []string{"inf", "financial", "web", "sys"}
 	randPs := []string{"monitor", "cicd", "k8s", "mq"}
 	randAs := []string{"kafka", "prometheus", "zookeeper", "elasticsearch"}
 
