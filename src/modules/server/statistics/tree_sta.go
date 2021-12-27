@@ -91,6 +91,9 @@ func statisticsWork() {
 					csG, csP, csA,
 				}
 
+				gpaNumWork(resourceType, g, matcherG, metric.GPAAllNumCount)
+				gpaNumWork(resourceType, g+"."+p, matcherGP, metric.GPAAllNumCount)
+				gpaNumWork(resourceType, g+"."+p+"."+a, matcherGPA, metric.GPAAllNumCount)
 				// 按照g来进行统计打点(group by g)
 				// g
 				gpaLabelNumWork(resourceType, common.LABEL_REGION, g, matcherG, ir, metric.GPAAllNumRegionCount)
@@ -128,7 +131,24 @@ func gpaLabelNumWork(resourceType string, targetLabel string, gpaName string, ma
 	for _, x := range statsRs.Group {
 		ms.With(prometheus.Labels{
 			common.LABEL_GPA_NAME:      gpaName,
-			common.LABEL_RESOURCE_TYPE: resourceType,
-			targetLabel:                x.Name}).Set(float64(x.Value))
+			common.LABEL_RESOURCE_TYPE: resourceType, targetLabel: x.Name}).Set(float64(x.Value))
 	}
 }
+
+// 通过索引的getGroupByLabel获取个数分布
+// 每个g.p.a在每种资源上的统计
+func gpaNumWork(resourceType string, gpaName string, matcher []*common.SingleTagReq, ms *prometheus.GaugeVec) {
+	req := common.ResourceQueryReq{
+		ResourceType: resourceType,
+		Labels:       matcher,
+	}
+	matchIds := mem_index.GetMatchIdsByIndex(req)
+	if len(matchIds) > 0 {
+		ms.With(prometheus.Labels{
+			common.LABEL_GPA_NAME:      gpaName,
+			common.LABEL_RESOURCE_TYPE: resourceType,
+		}).Set(float64(len(matchIds)))
+	}
+}
+
+// host特殊的

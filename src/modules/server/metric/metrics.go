@@ -40,6 +40,11 @@ var (
 		Help: "Number of resources group by cloud provider tag",
 	}, []string{common.LABEL_RESOURCE_TYPE, common.LABEL_CLOUD_PROVIDER})
 
+	GPAAllNumCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "gpa_all_num_count",
+		Help: "Num gpa of all",
+	}, []string{common.LABEL_GPA_NAME, common.LABEL_RESOURCE_TYPE})
+
 	// GPA
 	GPAAllNumRegionCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "gpa_all_region_num_count",
@@ -73,6 +78,8 @@ func NewMetrics() {
 
 	prometheus.DefaultRegisterer.MustRegister(ResourceNumRegionCount)
 	prometheus.DefaultRegisterer.MustRegister(ResourceNumCloudProviderCount)
+
+	prometheus.DefaultRegisterer.MustRegister(GPAAllNumCount)
 
 	prometheus.DefaultRegisterer.MustRegister(GPAAllNumClusterCount)
 	prometheus.DefaultRegisterer.MustRegister(GPAAllNumInstanceTypeCount)
