@@ -65,6 +65,22 @@ var (
 		Name: "gpa_all_instance_type_num_count",
 		Help: "Num gpa of all with tag instance type",
 	}, []string{common.LABEL_GPA_NAME, common.LABEL_RESOURCE_TYPE, common.LABEL_INSTANCE_TYPE})
+
+	// Host 特殊
+	GPAHostCpuCores = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "gpb_host_cpu_cores",
+		Help: "Num gpa cpu cores of ecs",
+	}, []string{common.LABEL_GPA_NAME})
+
+	GPAHostMemGbs = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "gpb_host_mem_gbs",
+		Help: "Num gpa mem gbs of ecs",
+	}, []string{common.LABEL_GPA_NAME})
+
+	GPAHostDiskGbs = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "gpb_host_disk_gbs",
+		Help: "Num gpa disk gbs of ecs",
+	}, []string{common.LABEL_GPA_NAME})
 )
 
 // NewMetrics 注册Metrics
@@ -85,5 +101,9 @@ func NewMetrics() {
 	prometheus.DefaultRegisterer.MustRegister(GPAAllNumInstanceTypeCount)
 	prometheus.DefaultRegisterer.MustRegister(GPAAllNumRegionCount)
 	prometheus.DefaultRegisterer.MustRegister(GPAAllNumCloudProviderCount)
+
+	prometheus.DefaultRegisterer.MustRegister(GPAHostCpuCores)
+	prometheus.DefaultRegisterer.MustRegister(GPAHostMemGbs)
+	prometheus.DefaultRegisterer.MustRegister(GPAHostDiskGbs)
 
 }

@@ -7,6 +7,7 @@ import (
 	"open-devops/src/models"
 	mem_index "open-devops/src/modules/server/mem-index"
 	"open-devops/src/modules/server/metric"
+	"strconv"
 	"strings"
 	"time"
 
@@ -91,6 +92,7 @@ func statisticsWork() {
 					csG, csP, csA,
 				}
 
+				// g.p.a 各级资源
 				gpaNumWork(resourceType, g, matcherG, metric.GPAAllNumCount)
 				gpaNumWork(resourceType, g+"."+p, matcherGP, metric.GPAAllNumCount)
 				gpaNumWork(resourceType, g+"."+p+"."+a, matcherGPA, metric.GPAAllNumCount)
@@ -112,6 +114,21 @@ func statisticsWork() {
 				gpaLabelNumWork(resourceType, common.LABEL_CLOUD_PROVIDER, g+"."+p+"."+a, matcherGPA, ir, metric.GPAAllNumCloudProviderCount)
 				gpaLabelNumWork(resourceType, common.LABEL_CLUSTER, g+"."+p+"."+a, matcherGPA, ir, metric.GPAAllNumClusterCount)
 				gpaLabelNumWork(resourceType, common.LABEL_INSTANCE_TYPE, g+"."+p+"."+a, matcherGPA, ir, metric.GPAAllNumInstanceTypeCount)
+
+				if resourceType == common.ResourceHost {
+					// g
+					hostSpecial(resourceType, common.LABEL_CPU, g, matcherG, ir, metric.GPAHostCpuCores)
+					hostSpecial(resourceType, common.LABEL_MEM, g, matcherG, ir, metric.GPAHostMemGbs)
+					hostSpecial(resourceType, common.LABEL_DISK, g, matcherG, ir, metric.GPAHostDiskGbs)
+					// g.p
+					hostSpecial(resourceType, common.LABEL_CPU, g+"."+p, matcherGP, ir, metric.GPAHostCpuCores)
+					hostSpecial(resourceType, common.LABEL_MEM, g+"."+p, matcherGP, ir, metric.GPAHostMemGbs)
+					hostSpecial(resourceType, common.LABEL_DISK, g+"."+p, matcherGP, ir, metric.GPAHostDiskGbs)
+					// g.p.a
+					hostSpecial(resourceType, common.LABEL_CPU, g+"."+p+"."+a, matcherGPA, ir, metric.GPAHostCpuCores)
+					hostSpecial(resourceType, common.LABEL_MEM, g+"."+p+"."+a, matcherGPA, ir, metric.GPAHostMemGbs)
+					hostSpecial(resourceType, common.LABEL_DISK, g+"."+p+"."+a, matcherGPA, ir, metric.GPAHostDiskGbs)
+				}
 			}
 		}()
 	}
@@ -152,3 +169,23 @@ func gpaNumWork(resourceType string, gpaName string, matcher []*common.SingleTag
 }
 
 // host特殊的
+func hostSpecial(resourceType string, targetLabel string, gpaName string, matcher []*common.SingleTagReq, ir mem_index.ResourceIndexer, ms *prometheus.GaugeVec) {
+	req := common.ResourceQueryReq{
+		ResourceType: resourceType,
+		Labels:       matcher,
+		TargetLabel:  targetLabel,
+	}
+	matchIds := mem_index.GetMatchIdsByIndex(req)
+
+	statsRe := ir.GetIndexReader().GetGroupDistributionByLabel(targetLabel, matchIds)
+
+	var all uint64
+	for _, x := range statsRe.Group {
+		num, _ := strconv.Atoi(x.Name)
+		all += uint64(num) * x.Value
+	}
+	if all > 0 {
+		ms.With(prometheus.Labels{common.LABEL_GPA_NAME: gpaName}).Set(float64(all))
+	}
+
+}
